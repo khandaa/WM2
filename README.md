@@ -37,17 +37,25 @@ This application handles client management, employee management, job assignments
 
 ### Backend Setup
 1. Clone the repository
-2. Install dependencies:
+2. Install all dependencies using the provided script:
    ```
-   npm install
+   ./install-deps.sh
    ```
+   This script installs dependencies for the root project, backend, and all modules.
+
 3. Set up environment variables:
    Create a `.env` file with the following:
    ```
    PORT=5000
    JWT_SECRET=your_secret_key
+   DB_NAME=WorkManagement.db
    ```
-4. Run the server:
+
+4. Database Setup:
+   The database schema is in `db/wm_db.sql` and seed data in `db/seedData.sql`.
+   SQLite database `WorkManagement.db` is pre-created in the db directory.
+   
+5. Run the server:
    ```
    npm run server
    ```

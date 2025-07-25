@@ -126,6 +126,9 @@ const paymentTransactionsRouter = require('./routes/payment-transactions');
 const widgetConfigRouter = require('./routes/widget-config');
 // const attendanceRouter = require('./routes/attendance');
 
+// Import CRUD routes
+const crudRouter = require('./routes/crud-index');
+
 // Register feature toggle routes
 app.use('/api/feature-toggles', featureTogglesRouter);
 
@@ -143,6 +146,9 @@ app.use('/api', widgetConfigRoutes);
 // Register file upload routes
 const fileUploadRoutes = require('./routes/file-upload');
 app.use('/api', fileUploadRoutes);
+
+// Register CRUD routes
+app.use('/api/crud', crudRouter);
 
 // Error handling middleware
 app.use((err, req, res, next) => {

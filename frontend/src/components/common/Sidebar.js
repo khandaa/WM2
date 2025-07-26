@@ -96,12 +96,12 @@ const Sidebar = ({ collapsed }) => {
       icon: <FaChartLine />,
       permission: 'dashboard_view'
     },
-    {
-      name: 'Attendance',
-      path: '/attendance',
-      icon: <FaList />,
-      permission: 'attendance_view'
-    }
+    // {
+    //   name: 'Attendance',
+    //   path: '/attendance',
+    //   icon: <FaList />,
+    //   permission: 'attendance_view'
+    // }
   ];
   
   // Start with base menu items

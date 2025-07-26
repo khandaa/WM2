@@ -171,7 +171,9 @@ export const loggingAPI = {
 export const featureToggleAPI = {
   getToggles: () => api.get('/feature-toggles'),
   getToggle: (name) => api.get(`/feature-toggles/${name}`),
+  createToggle: (featureData) => api.post('/feature-toggles', featureData),
   updateToggle: (name, isEnabled) => api.patch('/feature-toggles/update', { name, is_enabled: isEnabled }),
+  deleteToggle: (name) => api.delete(`/feature-toggles/${name}`),
 };
 
 // Payment API

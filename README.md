@@ -9,6 +9,7 @@ This application handles client management, employee management, job assignments
 ## Features
 
 - User authentication and authorization
+- Feature toggle system for enabling/disabling CRUD operations
 - Interactive dashboard with clickable statistics cards for quick navigation
 - Recent job activity list with clickable items linking directly to job details
 - Jobs by assignee dashboard card showing employee workload distribution
@@ -84,15 +85,51 @@ npm run dev
 - user_name: admin
 - Password: Admin@123
 
+## Feature Toggle System
+
+The application includes a comprehensive feature toggle system that allows administrators to enable or disable specific CRUD operations for different resources.
+
+### Features
+
+- Granular control over all CRUD operations (Create, Read, Update, Delete)
+- Each resource has individual toggles for each operation type
+- Admin users always have access to all features regardless of toggle status
+- Dynamic middleware that automatically applies the appropriate toggle check based on HTTP method and resource
+
+### Feature Toggle Naming Convention
+
+Feature toggles follow this naming pattern: `crud_operation_resource`
+
+Examples:
+- `crud_read_users` - Controls access to GET /api/crud/users
+- `crud_create_clients` - Controls access to POST /api/crud/clients
+- `crud_update_jobs` - Controls access to PUT /api/crud/jobs
+- `crud_delete_employees` - Controls access to DELETE /api/crud/employees
+
+### Managing Feature Toggles
+
+Feature toggles can be managed through the following API endpoints:
+
+- GET /api/feature-toggles - View all feature toggles
+- GET /api/feature-toggles/:name - View a specific feature toggle
+- PATCH /api/feature-toggles/update - Update a feature toggle status
+
+### Database Initialization
+
+Run the feature toggle seed script to initialize all feature toggles in the database:
+```
+node db/seed-feature-toggles.js
+```
+
 ## API Documentation
 
 The application provides RESTful API endpoints for all resources. Most endpoints follow standard CRUD operations:
 
-- GET /api/{resource} - List all resources
-- GET /api/{resource}/:id - Get a specific resource by ID
-- POST /api/{resource} - Create a new resource
-- PUT /api/{resource}/:id - Update a resource
-- DELETE /api/{resource}/:id - Delete a resource
+- GET /api/{resource} - List all resources (requires `crud_read_{resource}` toggle)
+- GET /api/{resource}/:id - Get a specific resource by ID (requires `crud_read_{resource}` toggle)
+- POST /api/{resource} - Create a new resource (requires `crud_create_{resource}` toggle)
+- PUT /api/{resource}/:id - Update a resource (requires `crud_update_{resource}` toggle)
+- DELETE /api/{resource}/:id - Delete a resource (requires `crud_delete_{resource}` toggle)
 
 Key API resources:
 - /api/user - User authentication and management

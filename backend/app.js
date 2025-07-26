@@ -179,10 +179,79 @@ if (process.env.NODE_ENV === 'production') {
   });
 }
 
+// Initialize feature toggles if they don't exist in the database
+const initFeatureToggles = async () => {
+  try {
+    // Check if feature_toggles table exists
+    db.get("SELECT name FROM sqlite_master WHERE type='table' AND name='feature_toggles'", [], async (err, table) => {
+      if (err) {
+        console.error('Error checking feature_toggles table:', err.message);
+        return;
+      }
+
+      // Create table if it doesn't exist
+      if (!table) {
+        const createTableSQL = `
+          CREATE TABLE IF NOT EXISTS feature_toggles (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            feature_name TEXT NOT NULL UNIQUE,
+            description TEXT,
+            is_enabled INTEGER DEFAULT 1,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+          );
+        `;
+
+        db.run(createTableSQL, (err) => {
+          if (err) {
+            console.error('Error creating feature_toggles table:', err.message);
+            return;
+          }
+          console.log('Feature toggles table created');
+        });
+      }
+
+      // Ensure admin permissions are set for feature toggles
+      const adminToggles = [
+        { name: 'feature_toggle_view', description: 'Allows viewing feature toggle settings' },
+        { name: 'feature_toggle_edit', description: 'Allows editing feature toggle settings' }
+      ];
+
+      adminToggles.forEach(toggle => {
+        db.get('SELECT id FROM feature_toggles WHERE feature_name = ?', [toggle.name], (err, row) => {
+          if (err) {
+            console.error(`Error checking toggle ${toggle.name}:`, err.message);
+            return;
+          }
+
+          if (!row) {
+            db.run(
+              'INSERT INTO feature_toggles (feature_name, description, is_enabled) VALUES (?, ?, 1)',
+              [toggle.name, toggle.description],
+              function(err) {
+                if (err) {
+                  console.error(`Error creating toggle ${toggle.name}:`, err.message);
+                  return;
+                }
+                console.log(`Created admin toggle '${toggle.name}'`);
+              }
+            );
+          }
+        });
+      });
+    });
+  } catch (error) {
+    console.error('Error initializing feature toggles:', error);
+  }
+};
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
   eventBus.emit('system:startup', { timestamp: new Date() });
+  
+  // Initialize feature toggles
+  initFeatureToggles();
 });
 
 // Handle graceful shutdown

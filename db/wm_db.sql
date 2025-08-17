@@ -5,28 +5,28 @@
 PRAGMA foreign_keys = ON;
 
 -- Drop existing tables if they exist
-DROP TABLE IF EXISTS tbl_master_users;
+-- user and roles will be managed in base_v2
+-- for every employee created, there will be a corresponding entry in master users table
+DROP TABLE IF EXISTS tbl_master_companies;
 DROP TABLE IF EXISTS tbl_master_employees;
 DROP TABLE IF EXISTS tbl_master_teams;
 DROP TABLE IF EXISTS tbl_master_departments;
-DROP TABLE IF EXISTS tbl_master_roles;
 DROP TABLE IF EXISTS tbl_master_clients;
-DROP TABLE IF EXISTS tbl_master_companies;
 DROP TABLE IF EXISTS tbl_master_jobs;
 DROP TABLE IF EXISTS tbl_master_job_category;
+DROP TABLE IF EXISTS tbl_master_job_status;
 DROP TABLE IF EXISTS tbl_master_document_types;
 
-DROP TABLE IF EXISTS tbl_user_activities;
-DROP TABLE IF EXISTS tbl_user_roles;
 DROP TABLE IF EXISTS tbl_employee_details;
 DROP TABLE IF EXISTS tbl_employee_documents;
 DROP TABLE IF EXISTS tbl_employee_reporting;
 DROP TABLE IF EXISTS tbl_employee_cost;
 
 DROP TABLE IF EXISTS tbl_client_companies;
-DROP TABLE IF EXISTS tbl_client_contactpersons;
+DROP TABLE IF EXISTS tbl_client_contacts;
 
-DROP TABLE IF EXISTS tbl_job_assignment;
+DROP TABLE IF EXISTS tbl_job_details;
+DROP TABLE IF EXISTS tbl_job_employee_assignment;
 DROP TABLE IF EXISTS tbl_job_status_report;
 DROP TABLE IF EXISTS tbl_job_comments;
 DROP TABLE IF EXISTS tbl_job_documents;
@@ -34,156 +34,37 @@ DROP TABLE IF EXISTS tbl_job_receipt_info;
 DROP TABLE IF EXISTS tbl_job_billing;
 
 
--- Create users table (master data)
-CREATE TABLE IF NOT EXISTS users_master (
-    user_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    mobile_number TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    first_name TEXT NOT NULL,
-    last_name TEXT NOT NULL,
-    is_active BOOLEAN DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+CREATE TABLE tbl_master_companies (
+    company_id INTEGER PRIMARY KEY,
+    company_name TEXT,
+    company_primary_contact_name TEXT,
+    company_primary_contact_mobile_number text, 
+    company_logo text,
+    company_url text,
+    company_city TEXT,
+    company_state TEXT
+
 );
 
--- Create roles table (master data)
-CREATE TABLE IF NOT EXISTS roles_master (
-    role_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create permissions table (master data)
-CREATE TABLE IF NOT EXISTS permissions_master (
-    permission_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name TEXT UNIQUE NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create user_roles junction table (transaction data)
-CREATE TABLE IF NOT EXISTS user_roles_tx (
-    user_role_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    role_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(user_id, role_id),
-    FOREIGN KEY (user_id) REFERENCES users_master(user_id) ON DELETE CASCADE,
-    FOREIGN KEY (role_id) REFERENCES roles_master(role_id) ON DELETE CASCADE
-);
-
--- Create role_permissions junction table (transaction data)
-CREATE TABLE IF NOT EXISTS role_permissions_tx (
-    role_permission_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    role_id INTEGER NOT NULL,
-    permission_id INTEGER NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(role_id, permission_id),
-    FOREIGN KEY (role_id) REFERENCES roles_master(role_id) ON DELETE CASCADE,
-    FOREIGN KEY (permission_id) REFERENCES permissions_master(permission_id) ON DELETE CASCADE
-);
-
--- Create activity_logs table (transaction data)
-CREATE TABLE IF NOT EXISTS activity_logs_tx (
-    activity_log_id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER,
-    action TEXT NOT NULL,
-    details TEXT,
-    ip_address TEXT,
-    user_agent TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users_master(user_id) ON DELETE SET NULL
-);
-
-
-
--- Create updated QR codes table
-CREATE TABLE IF NOT EXISTS payment_qr_codes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    name VARCHAR(100) NOT NULL,
-    description TEXT,
-    payment_type VARCHAR(50) NOT NULL, -- e.g., 'UPI', 'BANK', 'WALLET'
-    image_url VARCHAR(255),   -- File system path to the QR code image
-    active BOOLEAN DEFAULT 0, -- Only one QR code can be active at a time
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- Create index on payment type for faster lookups
-CREATE INDEX IF NOT EXISTS idx_payment_type ON payment_qr_codes(payment_type);
-
-
-CREATE TABLE payment_transactions (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    qr_code_id INTEGER,
-    transaction_ref VARCHAR(100) NOT NULL UNIQUE, -- Unique reference number for the transaction
-    user_id INTEGER, -- User who initiated the transaction
-    verified BOOLEAN DEFAULT 0,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT NULL,
-    FOREIGN KEY (qr_code_id) REFERENCES payment_qr_codes(id)
-);
-
--- Create index on transaction reference for faster lookups
-CREATE INDEX IF NOT EXISTS idx_transaction_ref ON payment_transactions(transaction_ref);
-
-
--- Migration: Add feature_toggles table
-CREATE TABLE IF NOT EXISTS feature_toggles (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    feature_name TEXT UNIQUE NOT NULL,
-    is_enabled INTEGER NOT NULL DEFAULT 0,
-    description TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-);
-
-
-
-
--- -- Create tables tbl_master_users
--- CREATE TABLE tbl_master_users (
---     user_id INTEGER PRIMARY KEY,
---     user_name TEXT,
---     email_id TEXT,
---     mobile_no text, 
---     user_password TEXT,
---     user_role TEXT,
---     user_start_date TEXT,
---     user_end_date TEXT,
---     employee_id TEXT,
---     isActive boolean,
---     password_last_update_date date,
---     FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id)
--- );
-
-
+-- every time a new employee is created, an enty should also be made in base_master_users
 -- Create tables tbl_master_employees
 CREATE TABLE tbl_master_employees (
     employee_id INTEGER PRIMARY KEY,
-    org_employee_id TEXT,
+    company_id integer,
+    company_employee_id TEXT,
     employee_name TEXT,
-    team_id integer, 
-    department_id integer,
     employee_gender TEXT,
+    employee_status text,
     employee_qualification TEXT,
-    date_of_joining TEXT,
+    employee_date_of_joining TEXT,
     employee_city_of_residence text,
     employee_city_of_work text,
-    employee_referred_by integer,
-    date_of_birth TEXT,
+    employee_date_of_birth TEXT,
     emergency_contact_no TEXT,
     emergency_contact_name TEXT,
     emergency_person_relation TEXT,
     employee_photo text,
-    role_id INTEGER,
-    FOREIGN KEY (role_id) REFERENCES tbl_master_roles(role_id),
-    FOREIGN KEY (team_id) REFERENCES tbl_master_teams(team_id),
-    FOREIGN KEY (department_id) REFERENCES tbl_master_departments(department_id)
+    FOREIGN KEY (company_id) REFERENCES tbl_master_companies(company_id)
 );
 
 
@@ -203,19 +84,11 @@ CREATE TABLE tbl_master_departments (
     department_owner integer,
     FOREIGN KEY (department_owner) REFERENCES tbl_master_employees(employee_id)
 );
--- -- Create tables
--- CREATE TABLE tbl_master_roles (
---     role_id INTEGER PRIMARY KEY AUTOINCREMENT,
---     role_name TEXT NOT NULL,
---     role_description TEXT,
---     role_type TEXT,
---     role_isactive boolean
--- );
 
 CREATE TABLE tbl_master_clients (
     client_id integer PRIMARY KEY,
     client_name TEXT,
-    group_name TEXT,
+    client_group_name TEXT,
     client_status TEXT,
     client_owner_name text,
     client_owner_email text,
@@ -227,25 +100,17 @@ CREATE TABLE tbl_master_clients (
     
 );
 
-CREATE TABLE tbl_master_companies (
-    company_id INTEGER PRIMARY KEY,
-    company_name TEXT,
-    company_website TEXT,
-    company_tax_identifier_name TEXT,
-    company_tax_identifier_value TEXT
-);
-
 
 CREATE TABLE tbl_master_jobs (
     job_id INTEGER PRIMARY KEY,
     job_name TEXT,
-    job_division_id INTEGER,
     job_category_id INTEGER,
     job_description TEXT,
     job_no INTEGER,
+    document_id integer,
     physical_file_no TEXT,
-    job_status TEXT,
-    assesment_year TEXT,
+    job_status_id integer,
+    job_assesment_year TEXT,
     job_received_date date, 
     job_planned_start_date date,
     job_planned_end_date date,
@@ -255,65 +120,63 @@ CREATE TABLE tbl_master_jobs (
     client_id INTEGER,
     company_id integer, 
     created_by INTEGER,
-    job_priority integer ,
+    job_create_date date,
+    last_update_by integer,
+    last_update_date date,
+    job_priority integer,
     job_client_priority integer, 
     job_overall_priority integer, 
-    receipt_date TEXT,
+    job_receipt_date TEXT,
     FOREIGN KEY (job_category_id) REFERENCES tbl_master_job_category(job_category_id),
     FOREIGN KEY (client_id) REFERENCES tbl_master_clients(client_id),
-    FOREIGN KEY (company_id) REFERENCES tbl_master_clients(company_id)
+    FOREIGN KEY (company_id) REFERENCES tbl_master_companies(company_id),
+    FOREIGN KEY (job_status_id) REFERENCES tbl_master_job_status(job_status_id),
+    FOREIGN KEY (document_id) REFERENCES tbl_master_document_types(document_id),
+    FOREIGN KEY (created_by) REFERENCES tbl_master_employees(employee_id),
+    FOREIGN KEY (last_update_by) REFERENCES tbl_master_employees(employee_id)
 );
 
 
 CREATE TABLE tbl_master_job_category (
     job_category_id INTEGER PRIMARY KEY,
     job_description TEXT,
+    job_category_type text,
     parent_job_category_id integer
 );
+
+CREATE TABLE tbl_master_job_status (
+    job_status_id INTEGER PRIMARY KEY,
+    job_status_name TEXT
+);
+
 
 CREATE TABLE tbl_master_document_types (
     document_id INTEGER PRIMARY KEY,
     document_type TEXT,
     document_desc TEXT,
-    document_category TEXT
+    document_category TEXT,
+    document_location text
 );
 
 
--- CREATE TABLE tbl_user_activities (
---     activity_id INTEGER PRIMARY KEY,
---     activity_name TEXT,
---     activity_description text,
---     activity_date_time datetime,
---     created_by TEXT,
---     ip_address text, 
---     device_type text, 
---     browser_name text
--- );
-
-CREATE TABLE tbl_user_roles (
-    user_role_id INTEGER PRIMARY KEY,
-    user_id integer,
-    role_id integer,
-    role_start_date date,
-    role_end_date date,
-    FOREIGN KEY (user_id) REFERENCES tbl_master_users(user_id),
-    FOREIGN KEY (role_id) REFERENCES tbl_master_roles(role_id)
-);
 
 -- Create tables tbl_master_employees
 CREATE TABLE tbl_employee_details (
     employee_detail_id integer primary key, 
     employee_id INTEGER,
-    employee_document_id integer,
-    employee_document_name text, 
-    employee_document_location text, 
-    FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id)
+    employee_team_id integer,
+    employee_department_id integer,
+    employee_location text,
+    FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id),
+    FOREIGN KEY (employee_team_id) REFERENCES tbl_master_teams(team_id),
+    FOREIGN KEY (employee_department_id) REFERENCES tbl_master_departments(department_id)
 );
 
 
 CREATE TABLE tbl_employee_documents (
     employee_document_id integer primary key, 
     employee_id INTEGER,
+    document_id integer,
     employee_document_name text, 
     employee_document_location text, 
     FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id)
@@ -322,11 +185,13 @@ CREATE TABLE tbl_employee_documents (
 CREATE TABLE tbl_employee_reporting (
     employee_reporting_id integer primary key, 
     employee_id INTEGER,
-    manager_id int, 
-    reporting_start_date date, 
-    reporting_end_date date,
+    employee_manager_id integer, 
+    employee_role_id integer,
+    role_start_date date, 
+    role_end_date date,
     FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id),
-    FOREIGN KEY (manager_id) REFERENCES tbl_master_employees(employee_id)
+    FOREIGN KEY (employee_manager_id) REFERENCES tbl_master_employees(employee_id),
+    FOREIGN KEY (employee_role_id) REFERENCES base_master_roles(role_id)
 );
 
 CREATE TABLE tbl_employee_cost (
@@ -337,7 +202,10 @@ CREATE TABLE tbl_employee_cost (
     start_datetime TEXT,
     end_datetime TEXT,
     billing_status TEXT,
-    FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id)
+    client_id integer,
+    invoice_no text,
+    FOREIGN KEY (employee_id) REFERENCES tbl_master_employees(employee_id),
+    FOREIGN KEY (client_id) REFERENCES tbl_master_clients(client_id)
 );
 
 
@@ -345,11 +213,17 @@ CREATE TABLE tbl_client_companies (
     client_company_id INTEGER PRIMARY KEY,
     company_id INTEGER,
     client_id INTEGER,
+    create_date date,
+    last_update_date date,
+    created_by integer,
+    last_updated_by integer,
+    company_tax_identifier_name TEXT,
+    company_tax_identifier_value TEXT,
     FOREIGN KEY (client_id) REFERENCES tbl_master_clients(client_id),
     FOREIGN KEY (company_id) REFERENCES tbl_master_companies(company_id)
 );
 
-CREATE TABLE tbl_client_contactpersons (
+CREATE TABLE tbl_client_contacts (
     contactperson_id INTEGER PRIMARY KEY,
     client_id integer,
     company_id integer,
@@ -365,29 +239,31 @@ CREATE TABLE tbl_client_contactpersons (
 CREATE TABLE tbl_job_assignment (
     job_assignment_id INTEGER PRIMARY KEY,
     job_id TEXT,
-    assignee_employee_id TEXT,
+    assigned_to_employee_id integer,
+    assigned_by_employee_id integer,
     job_assign_date TEXT,
-    job_assigned_by int,
     job_planned_start_date TEXT,
     job_planned_end_date TEXT,
     job_actual_start_date TEXT,
     job_actual_end_date TEXT,
     status TEXT DEFAULT 'Assigned',
     FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id),
-    FOREIGN KEY (assignee_employee_id) REFERENCES tbl_master_employees(employee_id),
-    FOREIGN KEY (job_assigned_by) REFERENCES tbl_master_employees(employee_id)
+    FOREIGN KEY (assigned_to_employee_id) REFERENCES tbl_master_employees(employee_id),
+    FOREIGN KEY (assigned_by_employee_id) REFERENCES tbl_master_employees(employee_id)
 );
 
 CREATE TABLE tbl_job_status_report (
-    job_status_id INTEGER PRIMARY KEY,
-    job_id TEXT,
-    assignee_employee_id TEXT,
-    report_datetime TEXT,
+    job_status_report_id INTEGER PRIMARY KEY,
+    job_id integer,
+    job_status_id integer,
+    status_by_employee_id integer,
+    status_report_date date,
+    status_report_time time,
     status_description TEXT,
-    job_overall_status TEXT,
     job_percentage_complete text,
     FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id),
-    FOREIGN KEY (assignee_employee_id) REFERENCES tbl_master_employees(employee_id)
+    FOREIGN KEY (job_status_id) REFERENCES tbl_master_job_status(job_status_id),
+    FOREIGN KEY (status_by_employee_id) REFERENCES tbl_master_employees(employee_id)
 );
 
 
@@ -395,13 +271,12 @@ CREATE TABLE tbl_job_status_report (
 
 CREATE TABLE tbl_job_comments (
     job_comment_id INTEGER PRIMARY KEY,
-    commenter_id integer,
+    job_commenter_id integer,
     comment_sequence_id INTEGER,
     comment_text TEXT,
     create_datetime datetime,
     update_datetime datetime,
-    job_status INTEGER,
-    FOREIGN KEY (commenter_id) REFERENCES tbl_master_employees(employee_id)
+    FOREIGN KEY (job_commenter_id) REFERENCES tbl_master_employees(employee_id)
 );
 
 CREATE TABLE tbl_job_documents (
@@ -412,19 +287,20 @@ CREATE TABLE tbl_job_documents (
     document_location TEXT,
     document_description TEXT,
     FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id),
-    FOREIGN KEY (document_type_id) REFERENCES tbl_master_document_types(document_id)
+    FOREIGN KEY (document_type_id) REFERENCES tbl_master_document_types(document_type_id)
 );
 
 
 CREATE TABLE tbl_job_receipt_info (
     job_receipt_id INTEGER PRIMARY KEY,
     job_id integer,
-    receipt_no TEXT,
+    job_receipt_no TEXT,
     file_reference_no TEXT,
-    assessment_year TEXT,
+    job_assessment_year TEXT,
     job_category_id integer,
     job_receipt_description TEXT,
-    FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id)
+    FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id),
+    FOREIGN KEY (job_category_id) REFERENCES tbl_master_job_category(job_category_id)
 );
 
 CREATE TABLE tbl_job_billing (
@@ -433,10 +309,11 @@ CREATE TABLE tbl_job_billing (
     client_id TEXT,
     invoice_id TEXT,
     invoice_status text,
-    invoice_raised_by text,
+    invoice_raised_by int,
     invoice_raised_date date,
     invoice_reference_number text,
     FOREIGN KEY (job_id) REFERENCES tbl_master_jobs(job_id),
-    FOREIGN KEY (client_id) REFERENCES tbl_master_clients(client_id)
+    FOREIGN KEY (client_id) REFERENCES tbl_master_clients(client_id),
+    FOREIGN KEY (invoice_raised_by) REFERENCES tbl_master_employees(employee_id)
 );
 

@@ -2,6 +2,22 @@
 
 All notable changes to this project will be documented in this file.
 
+## [0.1.4] - 2025-08-17
+
+### Fixed
+- Corrected syntax errors and inconsistencies in `db/wm_db.sql`.
+
+## [0.1.3] - 2025-08-06
+
+### Added
+- Added ZeptoMailer PHP class for sending emails via the ZeptoMail API
+- Implemented parameterized email sending with support for customizable sender, recipient, subject, and body content
+- Created EZeptoMailer Yii 1.1 extension with enhanced features:
+  - Template-based email support
+  - Configurable default sender information
+  - Built-in logging and error handling
+  - Integration with Yii's component system
+
 ## [0.1.2] - 2025-07-26
 
 ### Added

@@ -29,6 +29,7 @@ This application handles client management, employee management, job assignments
 - **Backend**: Express.js
 - **Database**: SQLite
 - **Authentication**: JWT with bcrypt
+- **Email Service**: ZeptoMail API
 
 ## Setup and Installation
 
@@ -55,6 +56,7 @@ This application handles client management, employee management, job assignments
 4. Database Setup:
    The database schema is in `db/wm_db.sql` and seed data in `db/seedData.sql`.
    SQLite database `WorkManagement.db` is pre-created in the db directory.
+   The schema has been updated to fix syntax errors and inconsistencies.
    
 5. Run the server:
    ```
@@ -171,6 +173,78 @@ The application includes a comprehensive reporting system that generates various
 node scripts/generate-reports.js
 ```
 Reports will be saved to the `/reports` directory.
+
+## Email System
+
+The application includes email sending functionality using the ZeptoMail API. There are multiple implementation options available:
+
+### 1. ZeptoMailer Class
+
+A standalone PHP class that provides a simple interface to send emails via the ZeptoMail API.
+
+#### Features
+- Customizable sender email address
+- Support for recipient name and email address
+- HTML body content
+- Customizable subject line
+- API response handling with error detection
+
+#### Usage Example
+```php
+$mailer = new ZeptoMailer();
+$result = $mailer->sendEmail(
+    'support@yourdomain.com',      // From address
+    'recipient@example.com',       // To address
+    'Recipient Name',              // To name
+    'Your Email Subject',          // Subject
+    '<div><b>Your HTML email content here</b></div>'  // HTML body
+);
+
+// Check result
+if ($result['success']) {
+    echo "Email sent successfully";
+} else {
+    echo "Failed to send email: " . json_encode($result['response']);
+}
+```
+
+### 2. EZeptoMailer Yii 1.1 Extension
+
+A full-featured Yii 1.1 extension for seamless integration with Yii applications.
+
+#### Features
+- Simple integration with Yii 1.1 applications
+- Send transactional emails with HTML content
+- Template-based email support
+- Configurable default sender information
+- Built-in logging and automatic error handling
+- Integration with Yii's component system
+
+#### Usage Example
+```php
+// In your Yii controller or model
+$result = Yii::app()->zeptoMailer->sendEmail(
+    'recipient@example.com',                              // To address
+    'Welcome to Our Service',                             // Subject
+    '<div><b>Thank you for registering!</b></div>',       // HTML body
+    'Recipient Name'                                      // To name (optional)
+);
+
+// Or use template-based emails
+$mergeVars = array(
+    'user_name' => 'John Doe',
+    'reset_link' => 'https://yourdomain.com/reset?token=ABC123'
+);
+
+$result = Yii::app()->zeptoMailer->sendTemplateEmail(
+    'recipient@example.com',                              // To address
+    'password_reset',                                     // Template key
+    $mergeVars,                                           // Merge variables
+    'John Doe'                                            // To name (optional)
+);
+```
+
+For detailed documentation on the Yii 1.1 extension, see `EZeptoMailer.README.md`
 
 ## License
 
